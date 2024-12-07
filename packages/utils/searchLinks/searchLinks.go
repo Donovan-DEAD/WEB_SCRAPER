@@ -33,8 +33,17 @@ func FilterPaths(linksFounded []string) (linksFiltered []string) {
 		}
 
 	}
-
 	return linksFiltered
+}
+
+func QuitHtmlProperty(linksFiltered []string) (linksFinal []string) {
+	regEx := regexp.MustCompile("/[^\"]*")
+
+	for _, value := range linksFiltered {
+		linksFinal = append(linksFinal, regEx.FindString(value))
+	}
+
+	return linksFinal
 }
 
 func SearchForlinks(page string) (linksInPage []string) {
@@ -47,6 +56,7 @@ func SearchForlinks(page string) (linksInPage []string) {
 	}
 
 	linksInPage = FilterPaths(linksInPage)
+	linksInPage = QuitHtmlProperty(linksInPage)
 
 	return linksInPage
 }
