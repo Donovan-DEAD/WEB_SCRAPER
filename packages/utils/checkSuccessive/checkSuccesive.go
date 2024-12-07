@@ -10,7 +10,7 @@ import (
 	"github.com/Donovan-DEAD/Web_Scraper/packages/utils/searchLinks"
 )
 
-func checksuccessive(linkToCheck string, channel chan links.Link) {
+func Checksuccessive(linkToCheck string, channel chan links.Link) {
 	resp, err := http.Get(linkToCheck)
 
 	if err != nil {
@@ -29,11 +29,11 @@ func checksuccessive(linkToCheck string, channel chan links.Link) {
 	for _, value := range linksInPage {
 		if strings.HasSuffix(linkToCheck, "/") && strings.HasPrefix(value, "/") {
 
-			go checksuccessive(linkToCheck+value[1:], channel)
+			go Checksuccessive(linkToCheck+value[1:], channel)
 
 		} else {
 
-			go checksuccessive(linkToCheck+value, channel)
+			go Checksuccessive(linkToCheck+value, channel)
 
 		}
 	}
