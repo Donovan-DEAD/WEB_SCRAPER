@@ -46,12 +46,12 @@ func QuitHtmlProperty(linksFiltered []string) (linksFinal []string) {
 	return linksFinal
 }
 
-func SearchForlinks(page string) (linksInPage []string) {
-
-	regexToSearch := []string{"href=\"/[^\"]*\"", "src=\"/[^\"]*\"", "action=\"/[^\"]*\"", "cite=\"/[^\"]*\"", "background=\"/[^\"]*\"", "data=\"/[^\"]*\"", "poster=\"/[^\"]*\""}
+func SearchForlinksR(page string) (linksInPage []string) {
+	patternRelative := "\"/[^\"]*\""
+	regexToSearch := []string{"href=", "src=", "action=", "cite=", "background=", "data=", "poster="}
 
 	for _, value := range regexToSearch {
-		regEx := regexp.MustCompile(value)
+		regEx := regexp.MustCompile(value + patternRelative)
 		linksInPage = append(linksInPage, regEx.FindAllString(page, -1)...)
 	}
 

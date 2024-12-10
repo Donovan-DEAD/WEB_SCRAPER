@@ -13,7 +13,7 @@ func main() {
 
 	linksInWebsite := map[string]int{}
 
-	website := "https://www.youtube.com/"
+	website := ""
 
 	go checksuccessive.Checksuccessive(website, chanel, &linksInWebsite)
 
@@ -25,7 +25,7 @@ func main() {
 
 			linksInWebsite[value.Path] = value.StatusCode
 
-		case <-time.After(time.Second * 5):
+		case <-time.After(time.Second * 1):
 
 			breakFor = true
 

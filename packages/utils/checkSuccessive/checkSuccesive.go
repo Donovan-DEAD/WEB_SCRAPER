@@ -28,7 +28,7 @@ func Checksuccessive(linkToCheck string, channel chan links.Link, linkRegister *
 		return
 	}
 
-	linksInPage := searchLinks.SearchForlinks(string(body))
+	linksInPage := searchLinks.SearchForlinksR(string(body))
 
 	for _, value := range linksInPage {
 		if strings.HasSuffix(linkToCheck, "/") && strings.HasPrefix(value, "/") {
