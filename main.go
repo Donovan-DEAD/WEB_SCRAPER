@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/Donovan-DEAD/Web_Scraper/packages/models/links"
@@ -25,14 +26,20 @@ func main() {
 
 			linksInWebsite[value.Path] = value.StatusCode
 
-		case <-time.After(time.Second * 1):
+		case <-time.After(time.Second * 30):
 
 			breakFor = true
 
 		}
 	}
 
+	var wg sync.WaitGroup
+	wg.Wait()
+	close(chanel)
+
+	count := 0
 	for key, value := range linksInWebsite {
-		fmt.Println(key, "\t", value)
+		fmt.Println(value, "\t", count, "\t", key)
+		count++
 	}
 }
