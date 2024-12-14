@@ -12,7 +12,7 @@ func FilterPaths(linksFounded []string) (linksFiltered []string) {
 		".rar", ".7z", ".tar", ".gz", ".bz2", ".jpg", ".jpeg", ".png", ".gif", ".bmp",
 		".svg", ".mp3", ".wav", ".flac", ".aac", ".ogg", ".mp4", ".avi", ".mkv", ".mov",
 		".wmv", ".exe", ".dmg", ".iso", ".apk", ".msi", ".epub", ".mobi", ".azw", ".csv",
-		".json", ".xml", ".ico", ".js", ".css", ".woff2"}
+		".json", ".xml", ".ico", ".js", ".css", ".woff2", "javascript:void(0)"}
 
 	for _, value := range linksFounded {
 
@@ -28,6 +28,10 @@ func FilterPaths(linksFounded []string) (linksFiltered []string) {
 			}
 		}
 
+		if strings.HasPrefix(value, "https:") || strings.HasPrefix(value, "http:") {
+			eliminate = true
+		}
+
 		if !eliminate {
 			linksFiltered = append(linksFiltered, value)
 		}
@@ -37,17 +41,17 @@ func FilterPaths(linksFounded []string) (linksFiltered []string) {
 }
 
 func QuitHtmlProperty(linksFiltered []string) (linksFinal []string) {
-	regEx := regexp.MustCompile("/[^\"]*")
+	regEx := regexp.MustCompile("\"[^\"]*")
 
 	for _, value := range linksFiltered {
-		linksFinal = append(linksFinal, regEx.FindString(value))
+		linksFinal = append(linksFinal, regEx.FindString(value)[1:])
 	}
 
 	return linksFinal
 }
 
 func SearchForlinksR(page string) (linksInPage []string) {
-	patternRelative := "\"/[^\"]*\""
+	patternRelative := "\".*\""
 	regexToSearch := []string{"href=", "src=", "action=", "cite=", "background=", "data=", "poster="}
 
 	for _, value := range regexToSearch {
@@ -55,8 +59,8 @@ func SearchForlinksR(page string) (linksInPage []string) {
 		linksInPage = append(linksInPage, regEx.FindAllString(page, -1)...)
 	}
 
-	linksInPage = FilterPaths(linksInPage)
 	linksInPage = QuitHtmlProperty(linksInPage)
+	linksInPage = FilterPaths(linksInPage)
 
 	return linksInPage
 }

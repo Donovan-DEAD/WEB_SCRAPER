@@ -1,3 +1,3 @@
-module github.com/Donovan-DEAD/Web_Scraper
+module github.com/Donovan-DEAD/WEB_SCRAPER
 
 go 1.23.3

@@ -5,19 +5,15 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"runtime"
+	"regexp"
+	"strings"
+	"sync"
 	"time"
 
-	"github.com/Donovan-DEAD/Web_Scraper/packages/models/links"
-	"github.com/Donovan-DEAD/Web_Scraper/packages/utils/searchLinks"
+	"github.com/Donovan-DEAD/WEB_SCRAPER/packages/utils/searchLinks"
 )
 
-func Checksuccessive(linkToCheck string, channel chan links.Link, linkRegister *map[string]int) {
-
-	//Check if the main program has already that link
-	if (*linkRegister)[linkToCheck] != 0 {
-		return
-	}
+func Checksuccessive(linkToCheck string, channel chan []string, linkRegister *sync.Map) {
 
 	//Starts the http request
 	resp, err := http.Get(linkToCheck)
@@ -29,7 +25,7 @@ func Checksuccessive(linkToCheck string, channel chan links.Link, linkRegister *
 
 	//If the status of the link is dead return it before it reads the body and cause an error
 	if resp.StatusCode != http.StatusOK {
-		channel <- links.CreateNewLink(linkToCheck, resp.StatusCode)
+		linkRegister.Store(linkToCheck, resp.StatusCode)
 		return
 	}
 
@@ -46,32 +42,57 @@ func Checksuccessive(linkToCheck string, channel chan links.Link, linkRegister *
 	linksInPage := searchLinks.SearchForlinksR(string(body))
 
 	//Send the result to the main program so they can register the link and its status code so they wont be repeated
-	channel <- links.CreateNewLink(linkToCheck, resp.StatusCode)
+	linkRegister.Store(linkToCheck, resp.StatusCode)
+
+	linksInPageFiltered := []string{}
 
 	//For each link start a new go routine
 	for _, value := range linksInPage {
-		for {
-			numGoRoutines := runtime.NumGoroutine()
-
-			//Check if the number of go routines dont increase a lot so the computer can handle with its resources
-			if numGoRoutines <= 130 {
-				break
-			}
-
-			time.Sleep(10 * time.Millisecond)
-
-		}
 
 		urlStructure, _ := url.Parse(linkToCheck)
-
+		//If the value for some reason has no characters is continue to not cause a runtime error
+		if len(value) == 0 {
+			continue
+		}
 		//Check if the path is relative to the root of the page or relative to the actual page
 		if string(value[0]) == "/" {
 			urlStructure.Path = value
 		} else {
-			urlStructure.Path += value
+			regEx := regexp.MustCompile("/[^/]*")
+
+			pathDestructured := regEx.FindAllString(urlStructure.Path, -1)
+			pathDestructured[len(pathDestructured)-1] = value
+
+			urlStructure.Path = strings.Join(pathDestructured, "")
 		}
 
-		go Checksuccessive(urlStructure.String(), channel, linkRegister)
+		if _, present := linkRegister.Load(urlStructure.String()); present {
+			continue
+		} else {
+			linksInPageFiltered = append(linksInPageFiltered, urlStructure.String())
+		}
 	}
 
+	if len(linksInPageFiltered) == 0 {
+		return
+	}
+
+	channel <- linksInPageFiltered
+}
+
+func WaitForPoolEntries(linksToCheck *[]string, chanel chan []string) {
+
+	breakFor := false
+
+	for !breakFor {
+		select {
+
+		case value := <-chanel:
+			(*linksToCheck) = append(*linksToCheck, value...)
+
+		case <-time.After(time.Second * 1):
+			breakFor = true
+
+		}
+	}
 }

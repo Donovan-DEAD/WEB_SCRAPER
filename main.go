@@ -1,45 +1,69 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"os"
 	"sync"
 	"time"
 
-	"github.com/Donovan-DEAD/Web_Scraper/packages/models/links"
-	checksuccessive "github.com/Donovan-DEAD/Web_Scraper/packages/utils/checkSuccessive"
+	checksuccessive "github.com/Donovan-DEAD/WEB_SCRAPER/packages/utils/checkSuccessive"
 )
 
 func main() {
-	chanel := make(chan links.Link)
+	stdinReader := bufio.NewReader(os.Stdin)
 
-	linksInWebsite := map[string]int{}
+	chanel := make(chan []string)
+	website := "https://www.w3schools.com/"
 
-	website := ""
+	linksInWebsite := sync.Map{}
+	linksToCheck := []string{website}
 
-	go checksuccessive.Checksuccessive(website, chanel, &linksInWebsite)
+	count := 1
 
-	breakFor := false
-	for !breakFor {
-		select {
+	for {
+		decision := ""
+		fmt.Println("\n\nYou want to continue scanning the web site for more links? y/n\n\n*Consider each loop increases several times the time it takes to complete.")
+		stdinReader.ReadString('\n')
+		fmt.Scan(decision)
 
-		case value := <-chanel:
-
-			linksInWebsite[value.Path] = value.StatusCode
-
-		case <-time.After(time.Second * 30):
-
-			breakFor = true
-
+		if decision == "N" || decision == "n" {
+			break
 		}
+
+		fmt.Println("Loop number: ", count)
+		count++
+		temporalSlice := linksToCheck
+		linksToCheck = []string{}
+
+		for index, path := range temporalSlice {
+			go checksuccessive.Checksuccessive(path, chanel, &linksInWebsite)
+			time.Sleep(time.Millisecond * 10)
+
+			if index%150 == 0 || index == len(temporalSlice) {
+				checksuccessive.WaitForPoolEntries(&linksToCheck, chanel)
+			}
+		}
+		fmt.Println("\n\nElements in the map:")
+		countForRange := 1
+		linksInWebsite.Range(func(key, value any) bool {
+			fmt.Println(value, "\t", countForRange, "\t", key)
+			countForRange++
+			return true
+		})
+
+		if len(linksToCheck) == 0 {
+			break
+		}
+
 	}
 
-	var wg sync.WaitGroup
-	wg.Wait()
 	close(chanel)
 
-	count := 0
-	for key, value := range linksInWebsite {
-		fmt.Println(value, "\t", count, "\t", key)
-		count++
-	}
+	countForRange := 1
+	linksInWebsite.Range(func(key, value any) bool {
+		fmt.Println(value, "\t", countForRange, "\t", key)
+		countForRange++
+		return true
+	})
 }
